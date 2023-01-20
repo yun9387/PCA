@@ -8,9 +8,10 @@ import glob
 from sklearn.svm import OneClassSVM
 
 N_COMPONENTS = 2 #must be between 0 and datasize 
-IMG_SIZE = (512, 512) 
+IMG_SIZE = (126, 126) 
 
-def pca_result(files):
+def pca_result(train_files, test_files):
+    files = train_files + test_files
     pca = PCA(n_components=N_COMPONENTS)
     data = np.zeros((len(files), IMG_SIZE[0]**2))
     
@@ -21,7 +22,9 @@ def pca_result(files):
         data[idx, :] = img.ravel() / 255.
         
     result = pca.fit_transform(StandardScaler().fit_transform(data))
-    return result
+    train_result = result[:len(train_files)]
+    test_result = result[len(train_files):]
+    return train_result, test_result
 
 def SVM(train_feature, test_feature):
     svm = OneClassSVM(kernel='rbf', nu=0.2, gamma=1e-04)
@@ -44,15 +47,15 @@ def main():
     train_files = glob.glob(".\\train_img\\*.jpeg")
     test_files = glob.glob(".\\test_img\\*.jpeg")
     
-    train_feature = pca_result(train_files)
-    test_feature = pca_result(test_files)
-    
+    train_feature, test_feature = pca_result(train_files, test_files)
+        
     pred = SVM(train_feature, test_feature)
     
     if N_COMPONENTS==2 :  Plot(train_feature, test_feature, pred)
     incorrect = test_feature[np.where(pred==-1, True, False)]
     acc = (len(incorrect)/len(test_feature)) * 100
-    print("正解率:{}%".format(acc))
+    print("生成データの異常判定率:{}%".format(acc))
     
 if __name__ == "__main__":
     main()
+    #out: 生成データの異常判定率:66.66666666666666%
