@@ -1,15 +1,14 @@
 #pip install umap-learn scikit-learn
 import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import cv2
-import matplotlib.pyplot as plt
 import glob
 from sklearn.svm import OneClassSVM
 import umap
+from sklearn import datasets
+import datetime
 
-IMG_SIZE = (126, 126)
+IMG_SIZE = (64, 64)
 RANDOM_STATE = 0
 train_path = ".\\forUMAP\\train_img\\*"
 test_path = ".\\forUMAP\\test_img\\*.jpeg"
@@ -61,22 +60,41 @@ def SVM(train_feature, test_feature):
     pred = svm.predict(test_feature)
     return pred
 
-def Plot(train_feature, test_feature, pred):
+def Plot(train_feature, train_label, test_feature, test_label, pred):
+    dt = datetime.datetime.now()
+    time = dt.strftime("%Y-%m-%d %H %M %S")
+    t1 = ".\\forUMAP\\result\\origin " + time + ".png"
+    t2 = ".\\forUMAP\\result\\normal " + time + ".png"
+    t3 = ".\\forUMAP\\result\\novelty " + time + ".png"
     correct = test_feature[np.where(pred==1, True, False)]
     incorrect = test_feature[np.where(pred==-1, True, False)]
     
     fig = plt.figure()
-    plt.scatter(train_feature[:,0], train_feature[:,1], c="grey")
-    plt.scatter(correct[:,0], correct[:,1], c="blue")
-    plt.scatter(incorrect[:,0], incorrect[:,1], c="red")    
+    for n in np.unique(train_label):
+        plt.scatter(train_feature[:,0][train_label==n], train_feature[:,1][train_label==n], label=n)
+    plt.legend()
+    plt.savefig(t1)
+    plt.scatter(correct[:,0], correct[:,1], c="blue", label="normal", marker="*")
+    plt.legend()
+    plt.savefig(t2)
+    plt.scatter(incorrect[:,0], incorrect[:,1], c="red", label="novelty", marker="*")
+    plt.legend()
+    plt.savefig(t3)
     plt.show()
     
     
 def main():
     train_data, train_label, test_data, test_label = load_data(train_path, test_path)
+    """
+    dataset = datasets.load_digits()
+    n=100
+    X, y = dataset.data, dataset.target
+    train_data, test_data = X[:n], X[n:]
+    train_label, test_label = y[:n], y[n:]
+    """
     train_embed, test_embed = Embedding(train_data, test_data)
-    print(train_embed.shape)
-    print(test_embed.shape)
+    pred = SVM(train_embed, test_embed)
+    Plot(train_embed, train_label, test_embed, test_label, pred)
     
     
 if __name__ == "__main__":
