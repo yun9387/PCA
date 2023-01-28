@@ -9,7 +9,8 @@ import glob
 from sklearn.svm import OneClassSVM
 import umap
 
-IMG_SIZE = (126, 126) 
+IMG_SIZE = (126, 126)
+RANDOM_STATE = 0
 train_path = ".\\forUMAP\\train_img\\*"
 test_path = ".\\forUMAP\\test_img\\*.jpeg"
 
@@ -45,7 +46,14 @@ def load_data(train_path, test_path):
     test_label = np.array(test_label)
     
     return train_data, train_label, test_data, test_label
-    
+
+def Embedding(train_data, test_data):
+    data = np.concatenate([train_data, test_data], 0)
+    mapper = umap.UMAP(random_state=RANDOM_STATE)
+    embedding = mapper.fit_transform(data)
+    train_embed = embedding[:len(train_data)]
+    test_embed = embedding[len(train_data):]
+    return train_embed, test_embed
 
 def SVM(train_feature, test_feature):
     svm = OneClassSVM(kernel='rbf', nu=0.2, gamma=1e-04)
@@ -66,10 +74,9 @@ def Plot(train_feature, test_feature, pred):
     
 def main():
     train_data, train_label, test_data, test_label = load_data(train_path, test_path)
-    print(train_data.shape)
-    print(train_label.shape)
-    print(test_data.shape)
-    print(test_label.shape)
+    train_embed, test_embed = Embedding(train_data, test_data)
+    print(train_embed.shape)
+    print(test_embed.shape)
     
     
 if __name__ == "__main__":
