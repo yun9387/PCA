@@ -47,11 +47,24 @@ def main():
     train_files = glob.glob(".\\train_img\\*.jpeg")
     test_files = glob.glob(".\\test_img\\*.jpeg")
     
-    train_feature, test_feature = pca_result(train_files, test_files)
+    train_feature, test_feature= pca_result(train_files, test_files)
         
     pred = SVM(train_feature, test_feature)
     
-    if N_COMPONENTS==2 :  Plot(train_feature, test_feature, pred)
+    test_files = np.array(test_files)
+    novelty_img = test_files[pred==-1]
+    s = np.int(np.round(np.sqrt(len(novelty_img))))
+    fig = plt.figure()
+    for idx, path in enumerate(novelty_img):
+        ax = fig.add_subplot(s, s, idx+1)
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        ax.imshow(img)
+    plt.show()
+        
+    print(novelty_img)       
+    
+    #if N_COMPONENTS==2 :  Plot(train_feature, test_feature, pred)
     incorrect = test_feature[np.where(pred==-1, True, False)]
     acc = (len(incorrect)/len(test_feature)) * 100
     print("生成データの異常判定率:{}%".format(acc))
